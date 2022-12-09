@@ -8,7 +8,7 @@ var router = express.Router();
 const cors = require('cors');
 
 const mongoose = require('mongoose')
-const schema = require("./schema")
+const mongoSchema = require("./schema")
 
 
 
@@ -21,20 +21,7 @@ async function connectToMongoDb() {
 		e => console.error(e)
 	)
 }
-
-
-router.get('/payroll/getAllEntries',cors(), async (req, res) => {
-	const filter = {};
-	const all = await schema.find(filter, function(err, result){
-		if (!err) {
-			res.json(result);
-		} else {
-			throw err;
-		}
-	}).clone().catch(function (err) {console.log(err)
-	})
-});
-
+ connectToMongoDb()
 
 //////////////////////////////////////////
 const AURA_ENDPOINT = "neo4j+s://d972d6ed.databases.neo4j.io";
@@ -145,14 +132,49 @@ await server.start();
 server.applyMiddleware({app});
   
   
-app.use((req, res) => {
-  res.status(200);
+// app.use((req, res) => {
+//   res.status(200);
+//
+//   res.send('we love a good middleware :)');
+//
+//   res.end();
+// });
 
-  res.send('we love a good middleware :)');
+		app.get(async (req, res) => {
+			const filter = {};
+			res.send('getting somehting here');
+			const all = await mongoSchema.find(filter, function (err, result) {
+				if (!err) {
+					console.log(result)
+					res.send('getting somehting here'+result);
+					//res.json(result);
+				} else {
+					res.send('bad outcome here');
+					throw err;
+				}
+			}).clone().catch(function (err) {
+				console.log(err)
+				res.send('bad outcome here');
+			})
+		});
 
-  res.end();
-});
 
+
+
+		app.get('/payroll/getAllEntries',cors(), async (req, res) => {
+			//res.send('getting somehting here');
+			const filter = {};
+			const all = await mongoSchema.find(filter, function(err, result){
+				if (!err) {
+					console.log(result)
+					res.send('getting somehting here');
+					//res.json(result);
+				} else {
+					throw err;
+				}
+			}).clone().catch(function (err) {console.log(err)
+			})
+		});
 
 // await app.listen().then(({url}) => {
 //     console.log(`GraphQL server ready at ${url}`);
