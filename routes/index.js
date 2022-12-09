@@ -199,6 +199,26 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 		});
 
 
+		app.get('/payroll/findByStartTime',cors(), async (req, res) => {
+			const filter = {key: req.body.key};
+			await mongoSchema.findOne(filter, function(err, result){
+				if (!err) {
+					res.json("key did not exist");
+					console.log("looking for: "+req.body.onClockObjects.startTime)
+					for(let i=0; i<result.onClockObjects.length; i++) {
+						//console.log("currently: "+result.onClockObjects[i].startTime);
+						if (result.onClockObjects[i].startTime === req.body.onClockObjects.startTime) {
+							res.json(result.onClockObjects[i]);
+							return
+						}
+					}
+					res.json("start time did not exist for this key");
+				} else {
+					throw err;
+				}
+			}).clone().catch(function (err) {console.log(err)
+			})
+		});
 
 
 
