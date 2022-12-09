@@ -2,8 +2,8 @@ const { Neo4jGraphQL } = require("@neo4j/graphql");
 const { ApolloServer, gql } = require("apollo-server-express");
 const neo4j = require("neo4j-driver");
 
-var express = require('express');
 //var router = express.Router();
+const express = require('express');
 const cors = require('cors');
 const bodyParser = require("express");
 
@@ -21,8 +21,6 @@ async function connectToMongoDb() {
 	)
 }
 
-
-//////////////////////////////////////////
 const AURA_ENDPOINT = "neo4j+s://d972d6ed.databases.neo4j.io";
 const USERNAME = "neo4j";
 const PASSWORD = "HIFRdWEIBLOxy5RKTZevQfNeQfnsrvPAUO_vlepCWiU";
@@ -117,7 +115,15 @@ connectToMongoDb().then(r => {
 	console.log("Mongodb connection started")
 });
 startApolloServer().then(r => {
-	console.log("ApolloServer started successfully ")
+	console.log("ApolloServer started")
+});
+
+const app = express(); //todo: this recently added, seems to be the way we want it
+//app.use(cors);
+app.use(bodyParser.json())
+const currentPort=3000;
+app.listen(currentPort, () => {
+	console.log('Express Server listening on port '+currentPort);
 });
 
 async function startApolloServer() {
@@ -134,18 +140,14 @@ async function startApolloServer() {
 				// },
 			}
 		});
+	await server.start();
+	server.applyMiddleware({app}); //todo: apply cors here if needed
 
-
-const app = express(); //todo: this recently added, seems to be the way we want it
-		//app.use(cors);
-		app.use(bodyParser.json())
-		const currentPort=3000;
-		app.listen(currentPort, () => {
-			console.log('Express Server listening on port '+currentPort);
-		});
-await server.start();
-server.applyMiddleware({app}); //todo: apply cors here if needed
-
+	await new Promise(resolve => app.listen({ port: 4000 }, resolve));
+		console.log(`🚀 Neo4J Server ready at http://localhost:4000${server.graphqlPath}`);
+	});
+}
+//////////////////////////////////////////////////////////////////////////////////////////// END SETUP OVERHEAD
 
 
 /////////////////////////////////////////// GET METHODS
@@ -173,7 +175,6 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 			}).clone().catch(function (err) {console.log(err)
 			})
 		});
-
 
 		app.get('/payroll/findByStartTime',cors(), async (req, res) => {
 			const filter = {key: req.body.key};
@@ -255,12 +256,25 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 		});
 
 
+/////////////////////////////////////////// DELETE METHODS
+app.delete('/payroll/deleteByStartTime',cors(), async (req, res) => {
+	const filter = {key: req.body.key};
+	await mongoSchema.findOne(filter, async function (err, result) {
+		if (!err) {
+			for (let i = 0; i < result.onClockObjects.length; i++) {
+				if (result.onClockObjects[i].startTime === req.body.onClockObjects.startTime) {
+					result.onClockObjects.splice(i, 1);
+					await result.save();
+					res.json("successfully removed start time of : "+req.body.onClockObjects.startTime);
+					return
+				}
+			}
+			res.json("start time did not exist for this key");
+		} else {
+			throw err;
+		}
+	}).clone().catch(function (err) {console.log(err)
+	})
+});
 
-////////////////////////////////////////////////////////////////////////////////////////////
-await new Promise(resolve => app.listen({ port: 4000 }, resolve));
-  console.log(`🚀 Neo4J Server ready at http://localhost:4000${server.graphqlPath}`);
-	});
 
-
- 
-}
