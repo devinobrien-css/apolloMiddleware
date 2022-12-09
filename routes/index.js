@@ -120,6 +120,9 @@ startApolloServer().then(r => {
 
 const app = express(); //todo: this recently added, seems to be the way we want it
 //app.use(cors);
+app.use(cors({
+	origin: '*'
+}));
 app.use(bodyParser.json())
 const currentPort=4001;
 app.listen(currentPort, () => {
