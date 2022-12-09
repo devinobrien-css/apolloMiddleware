@@ -128,10 +128,10 @@ async function startApolloServer() {
 				driverConfig: {
 					database: "neo4j"
 				},
-				context: async ({ req }) => {
-					const something = getSomething(req)
-					return { something }
-				},
+				// context: async ({ req }) => { //todo remove boiler plate, just make sure it doesnt break everything
+				// 	const something = getSomething(req)
+				// 	return { something }
+				// },
 			}
 		});
 
@@ -228,7 +228,31 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 				})
 			})
 
-
+/////////////////////////////////////////// PUT METHODS
+		app.put('/payroll/updateByStartTime',cors(), async (req, res) => {
+			const filter = {key: req.body.key};
+			await mongoSchema.findOne(filter, async function (err, result) {
+				if (!err) {
+					//todo: need error checking for empty array={} findOne() result, shouldn't happen anyway though
+					for (let i = 0; i < result.onClockObjects.length; i++) {
+						console.log("currently: "+result.onClockObjects[i].startTime);
+						if (result.onClockObjects[i].startTime === req.body.startTimeToFind) {
+							result.onClockObjects[i].startTime=req.body.onClockObjects.startTime;
+							result.onClockObjects[i].stopTime=req.body.onClockObjects.stopTime;
+							result.onClockObjects[i].totalHours=req.body.onClockObjects.totalHours;
+							result.onClockObjects[i].description=req.body.onClockObjects.description;
+							await result.save();
+							res.json("successfully updated start time of : "+req.body.onClockObjects.startTime);
+							return
+						}
+					}
+					res.json("start time did not exist for this key, could not update");
+				} else {
+					throw err;
+				}
+			}).clone().catch(function (err) {console.log(err)
+			})
+		});
 
 
 
