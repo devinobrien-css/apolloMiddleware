@@ -9,6 +9,7 @@ const cors = require('cors');
 
 const mongoose = require('mongoose')
 const mongoSchema = require("./schema")
+const bodyParser = require("express");
 
 
 
@@ -133,6 +134,7 @@ async function startApolloServer() {
 /////////////////////////
 const app = express(); //todo: this recently added, seems to work perfectly fine
 		//app.use(cors);
+		app.use(bodyParser.json())
 		app.listen(3000, () => {
 			console.log('Server listening on port 3000');
 		});
@@ -182,13 +184,10 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 		});
 
 		app.get('/payroll/findByKey',cors(), async (req, res) => {
-
-			//const filter = {key: req.query.key}; //todo: need this for client
-			//const key = "ABRANDNEWDEMOSTRING"
-			const key = "this will be a csv composite key from client"
-			const filter = {key: key}
-			console.log(JSON.stringify(req.params))
-			console.log(req.body)
+			//const filter = {key: req.query.key}; //todo: need this for client later on
+			const filter = {key: req.body.key}
+			//console.log("stringify = "+JSON.stringify(req.params))
+			//console.log(req.body.key)
 			const searchResult = await mongoSchema.find(filter, function(err, result){
 				if (!err) {
 					res.json(result);
