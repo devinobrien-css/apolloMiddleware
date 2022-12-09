@@ -121,7 +121,7 @@ startApolloServer().then(r => {
 const app = express(); //todo: this recently added, seems to be the way we want it
 //app.use(cors);
 app.use(bodyParser.json())
-const currentPort=3000;
+const currentPort=4001;
 app.listen(currentPort, () => {
 	console.log('Express Server listening on port '+currentPort);
 });
