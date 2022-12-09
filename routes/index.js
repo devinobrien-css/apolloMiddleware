@@ -277,4 +277,23 @@ app.delete('/payroll/deleteByStartTime',cors(), async (req, res) => {
 	})
 });
 
+app.delete('/payroll/deleteByKey',
+	cors(),
+	async (req, res) => {
+		const filter = {key: req.body.key}
+		await mongoSchema.exists(filter, async function (err, result) {
+			if (!err) {
+				if (result) {
+					mongoSchema.deleteOne({ key: req.body.key }).then(function(){
+						res.send("successfully delete existing entry: " + req.body.key);
+					}).catch(function(error){
+					});
+				} else {
+					res.send("entry: " + req.body.key + "did NOT exist, could not delete");
+				}
+			} else {
+				throw err;
+			}
 
+		})
+	})
