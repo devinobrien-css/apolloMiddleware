@@ -123,13 +123,21 @@ async function startApolloServer() {
 			context: {
 				driverConfig: {
 					database: "neo4j"
-				}
+				},
+				context: async ({ req }) => {
+					const something = getSomething(req)
+					return { something }
+				},
 			}
 		});
-///////////////////////////
-const app = express();
+/////////////////////////
+const app = express(); //todo: this recently added, seems to work perfectly fine
+		//app.use(cors);
+		app.listen(3000, () => {
+			console.log('Server listening on port 3000');
+		});
 await server.start();
-server.applyMiddleware({app});
+server.applyMiddleware({app}); //todo: apply cors here if needed
   
   
 // app.use((req, res) => {
@@ -140,35 +148,32 @@ server.applyMiddleware({app});
 //   res.end();
 // });
 
-		app.get(async (req, res) => {
-			const filter = {};
-			res.send('getting somehting here');
-			const all = await mongoSchema.find(filter, function (err, result) {
-				if (!err) {
-					console.log(result)
-					res.send('getting somehting here'+result);
-					//res.json(result);
-				} else {
-					res.send('bad outcome here');
-					throw err;
-				}
-			}).clone().catch(function (err) {
-				console.log(err)
-				res.send('bad outcome here');
-			})
-		});
+		// app.get(async (req, res) => {
+		// 	const filter = {};
+		// 	res.send('getting somehting here');
+		// 	const all = await mongoSchema.find(filter, function (err, result) {
+		// 		if (!err) {
+		// 			console.log(result)
+		// 			res.send('getting somehting here'+result);
+		// 			//res.json(result);
+		// 		} else {
+		// 			res.send('bad outcome here');
+		// 			throw err;
+		// 		}
+		// 	}).clone().catch(function (err) {
+		// 		console.log(err)
+		// 		res.send('bad outcome here');
+		// 	})
+		// });
 
 
 
-
+/////////////////////////////////////////// GET METHODS
 		app.get('/payroll/getAllEntries',cors(), async (req, res) => {
-			//res.send('getting somehting here');
 			const filter = {};
 			const all = await mongoSchema.find(filter, function(err, result){
 				if (!err) {
-					console.log(result)
-					res.send('getting somehting here');
-					//res.json(result);
+					res.json(result);
 				} else {
 					throw err;
 				}
@@ -176,9 +181,30 @@ server.applyMiddleware({app});
 			})
 		});
 
-// await app.listen().then(({url}) => {
-//     console.log(`GraphQL server ready at ${url}`);
-// });
+		app.get('/payroll/findByKey',cors(), async (req, res) => {
+
+			//const filter = {key: req.query.key}; //todo: need this for client
+			const filter = {key: req.key}
+			console.log(JSON.stringify(req.params))
+			console.log(req.body)
+			const searchResult = await mongoSchema.find(filter, function(err, result){
+				if (!err) {
+					res.json(result);
+				} else {
+					throw err;
+				}
+			}).clone().catch(function (err) {console.log(err)
+			})
+		});
+
+
+
+
+
+
+
+
+////////////////////////////////////////////////////////////////////////////////////////////
 await new Promise(resolve => app.listen({ port: 4000 }, resolve));
 
   console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
