@@ -202,6 +202,9 @@ async function startApolloServer() {
 		app.post('/payroll/clockIn',
 			cors(),
 			async (req, res) => {
+				//res.send("just send back nonsense clock in");
+				//console.log(req.body.key)
+				//return
 				const filter = {key: req.body.key}
 				await mongoSchema.exists(filter, async function (err, result) {
 					if (!err) {
