@@ -164,8 +164,8 @@ async function startApolloServer() {
 		});
 
 		app.get('/payroll/findByKey',cors(), async (req, res) => {
-			//const filter = {key: req.query.key}; //todo: need this for client later on
-			const filter = {key: req.body.key}
+			const filter = {key: req.query.key}; //todo: must be processed in this way for axios request
+			//const filter = {key: req.body.key} //this way works for postman testing
 			const searchResult = await mongoSchema.find(filter, function(err, result){
 				if (!err) {
 					res.json(result);
