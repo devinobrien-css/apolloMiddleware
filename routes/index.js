@@ -1,28 +1,26 @@
 const { Neo4jGraphQL } = require("@neo4j/graphql");
 const { ApolloServer, gql } = require("apollo-server-express");
-//const { ApolloServer } = require('apollo-server-express');
 const neo4j = require("neo4j-driver");
-//////////////////////////////////////////
+
 var express = require('express');
-var router = express.Router();
+//var router = express.Router();
 const cors = require('cors');
+const bodyParser = require("express");
 
 const mongoose = require('mongoose')
 const mongoSchema = require("./schema")
-const bodyParser = require("express");
-
-
 
 async function connectToMongoDb() {
 	await mongoose.connect("mongodb+srv://\n" +
 		"youAssign:eZpMBpi72GntMYVB@cluster0.lxz54si.mongodb.net/?retryWrites=true&w=majority",
 		() => {
-			console.log("mongo connected successfully")
+			console.log("Mongodb connected successfully")
 		},
 		e => console.error(e)
+
 	)
 }
- connectToMongoDb()
+
 
 //////////////////////////////////////////
 const AURA_ENDPOINT = "neo4j+s://d972d6ed.databases.neo4j.io";
@@ -114,11 +112,16 @@ const neo4jGraphQL = new Neo4jGraphQL({
   typeDefs,
   driver
 });
-startApolloServer();
+
+connectToMongoDb().then(r => {
+	console.log("Mongodb connection started")
+});
+startApolloServer().then(r => {
+	console.log("ApolloServer started successfully ")
+});
 
 async function startApolloServer() {
 	neo4jGraphQL.getSchema().then(async (schema) => {
-		
 		const server = new ApolloServer({
 			schema,
 			context: {
@@ -131,42 +134,17 @@ async function startApolloServer() {
 				},
 			}
 		});
-/////////////////////////
-const app = express(); //todo: this recently added, seems to work perfectly fine
+
+
+const app = express(); //todo: this recently added, seems to be the way we want it
 		//app.use(cors);
 		app.use(bodyParser.json())
-		app.listen(3000, () => {
-			console.log('Server listening on port 3000');
+		const currentPort=3000;
+		app.listen(currentPort, () => {
+			console.log('Express Server listening on port '+currentPort);
 		});
 await server.start();
 server.applyMiddleware({app}); //todo: apply cors here if needed
-  
-  
-// app.use((req, res) => {
-//   res.status(200);
-//
-//   res.send('we love a good middleware :)');
-//
-//   res.end();
-// });
-
-		// app.get(async (req, res) => {
-		// 	const filter = {};
-		// 	res.send('getting somehting here');
-		// 	const all = await mongoSchema.find(filter, function (err, result) {
-		// 		if (!err) {
-		// 			console.log(result)
-		// 			res.send('getting somehting here'+result);
-		// 			//res.json(result);
-		// 		} else {
-		// 			res.send('bad outcome here');
-		// 			throw err;
-		// 		}
-		// 	}).clone().catch(function (err) {
-		// 		console.log(err)
-		// 		res.send('bad outcome here');
-		// 	})
-		// });
 
 
 
@@ -186,8 +164,6 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 		app.get('/payroll/findByKey',cors(), async (req, res) => {
 			//const filter = {key: req.query.key}; //todo: need this for client later on
 			const filter = {key: req.body.key}
-			//console.log("stringify = "+JSON.stringify(req.params))
-			//console.log(req.body.key)
 			const searchResult = await mongoSchema.find(filter, function(err, result){
 				if (!err) {
 					res.json(result);
@@ -203,10 +179,7 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 			const filter = {key: req.body.key};
 			await mongoSchema.findOne(filter, function(err, result){
 				if (!err) {
-					res.json("key did not exist");
-					console.log("looking for: "+req.body.onClockObjects.startTime)
 					for(let i=0; i<result.onClockObjects.length; i++) {
-						//console.log("currently: "+result.onClockObjects[i].startTime);
 						if (result.onClockObjects[i].startTime === req.body.onClockObjects.startTime) {
 							res.json(result.onClockObjects[i]);
 							return
@@ -221,15 +194,47 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 		});
 
 
+/////////////////////////////////////////// POST METHODS
+		app.post('/payroll/clockIn',
+			cors(),
+			async (req, res) => {
+				const filter = {key: req.body.key}
+				await mongoSchema.exists(filter, async function (err, result) {
+					if (!err) {
+						if (result) { //if key does exist, then check for duplicate start time
+							const userFound = await mongoSchema.findOne({key: req.body.key});
+							if(userFound.onClockObjects.find(({ startTime }) => startTime === req.body.onClockObjects.startTime)){//blocks duplicate start times
+								res.send("you have already clocked in at this time: "+req.body.onClockObjects.startTime);
+								return
+							}else{
+								userFound.onClockObjects.push(req.body.onClockObjects);//if key exists, and there is not already a start time for this time
+								await userFound.save();
+								res.send("successfully updated existing entry: " + req.body.key);
+							}
+						} else { //if key does not yet exist, create key and populate with data from request as this is fist clockIN
+							const clockIn = await mongoSchema.create({
+								key: req.body.key,
+								email: req.body.email,
+								projectId: req.body.projectId,
+								date: req.body.date,
+								onClockObjects: req.body.onClockObjects
+							});
+							res.send("successfully added new entry: " + req.body.key + " to database");
+						}
+					} else {
+						throw err;
+					}
+
+				})
+			})
+
 
 
 
 
 ////////////////////////////////////////////////////////////////////////////////////////////
 await new Promise(resolve => app.listen({ port: 4000 }, resolve));
-
-  console.log(`🚀 Server ready at http://localhost:4000${server.graphqlPath}`);
-console.log("finish line");
+  console.log(`🚀 Neo4J Server ready at http://localhost:4000${server.graphqlPath}`);
 	});
 
 
