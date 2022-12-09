@@ -184,7 +184,9 @@ server.applyMiddleware({app}); //todo: apply cors here if needed
 		app.get('/payroll/findByKey',cors(), async (req, res) => {
 
 			//const filter = {key: req.query.key}; //todo: need this for client
-			const filter = {key: req.key}
+			//const key = "ABRANDNEWDEMOSTRING"
+			const key = "this will be a csv composite key from client"
+			const filter = {key: key}
 			console.log(JSON.stringify(req.params))
 			console.log(req.body)
 			const searchResult = await mongoSchema.find(filter, function(err, result){
