@@ -156,8 +156,8 @@ async function startApolloServer() {
 /////////////////////////////////////////// GET METHODS
 
 app.get('/payroll/getUserTimeStampsByDay',cors(), async (req, res) => {
-	const filter = {date: req.body.date, email:req.body.email};
-	//console.log("checking following fields" +filter)g
+	const filter = {date: req.query.date, email:req.query.email};
+	console.log("checking following fields" +filter)
 	await mongoSchema.find(filter, function(err, result){
 		if (!err) {
 			//console.log("your results: "+result);
