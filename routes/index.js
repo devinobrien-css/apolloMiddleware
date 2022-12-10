@@ -154,6 +154,24 @@ async function startApolloServer() {
 
 
 /////////////////////////////////////////// GET METHODS
+
+app.get('/payroll/getUserTimeStampsByDay',cors(), async (req, res) => {
+	const filter = {date: req.query.date, email:req.query.email};
+	console.log("checking following fields" +filter)
+	await mongoSchema.find(filter, function(err, result){
+		if (!err) {
+			//console.log("your results: "+result);
+			res.json(result);
+		} else {
+			res.json("this key was not found");
+			//throw err;
+		}
+	}).clone().catch(function (err) {console.log(err)
+	})
+});
+
+
+
 		app.get('/payroll/getAllEntries',cors(), async (req, res) => {
 			const filter = {};
 			await mongoSchema.find(filter, function(err, result){
