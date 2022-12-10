@@ -156,11 +156,12 @@ async function startApolloServer() {
 /////////////////////////////////////////// GET METHODS
 		app.get('/payroll/getAllEntries',cors(), async (req, res) => {
 			const filter = {};
-			const all = await mongoSchema.find(filter, function(err, result){
+			await mongoSchema.find(filter, function(err, result){
 				if (!err) {
 					res.json(result);
 				} else {
-					throw err;
+					res.json("failed to get all entries");
+					//throw err;
 				}
 			}).clone().catch(function (err) {console.log(err)
 			})
@@ -169,29 +170,35 @@ async function startApolloServer() {
 		app.get('/payroll/findByKey',cors(), async (req, res) => {
 			const filter = {key: req.query.key}; //todo: must be processed in this way for axios request
 			//const filter = {key: req.body.key} //this way works for postman testing
-			const searchResult = await mongoSchema.find(filter, function(err, result){
+			await mongoSchema.find(filter, function(err, result){
 				if (!err) {
 					res.json(result);
 				} else {
-					throw err;
+					res.json("this key was not found");
+					//throw err;
 				}
 			}).clone().catch(function (err) {console.log(err)
 			})
 		});
 
 		app.get('/payroll/findByStartTime',cors(), async (req, res) => {
-			const filter = {key: req.body.key};
+			const filter = {key: req.query.key};
+			//console.log("req.query: "+req.query.key)
+			//res.send("beep boop")
+			//return
 			await mongoSchema.findOne(filter, function(err, result){
-				if (!err) {
+				//console.log("result: "+result)
+				if (!err&&result) {
 					for(let i=0; i<result.onClockObjects.length; i++) {
-						if (result.onClockObjects[i].startTime === req.body.onClockObjects.startTime) {
+						if (result.onClockObjects[i].startTime === req.query.startTime) {
 							res.json(result.onClockObjects[i]);
 							return
 						}
 					}
 					res.json("start time did not exist for this key");
 				} else {
-					throw err;
+					res.json("this key was not found");
+					//throw err;
 				}
 			}).clone().catch(function (err) {console.log(err)
 			})
@@ -265,13 +272,15 @@ async function startApolloServer() {
 /////////////////////////////////////////// DELETE METHODS
 app.delete('/payroll/deleteByStartTime',cors(), async (req, res) => {
 	const filter = {key: req.body.key};
+	console.log(req.body.key)
 	await mongoSchema.findOne(filter, async function (err, result) {
 		if (!err) {
+			//todo: problem with non existant key, NEED PROPER ERROR CHECKING
 			for (let i = 0; i < result.onClockObjects.length; i++) {
-				if (result.onClockObjects[i].startTime === req.body.onClockObjects.startTime) {
+				if (result.onClockObjects[i].startTime === req.body.startTime) {
 					result.onClockObjects.splice(i, 1);
 					await result.save();
-					res.json("successfully removed start time of : "+req.body.onClockObjects.startTime);
+					res.json("successfully removed start time of : "+req.body.startTime);
 					return
 				}
 			}
