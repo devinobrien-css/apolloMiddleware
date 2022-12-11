@@ -137,10 +137,6 @@ async function startApolloServer() {
 				driverConfig: {
 					database: "neo4j"
 				},
-				// context: async ({ req }) => { //todo remove boiler plate, just make sure it doesnt break everything
-				// 	const something = getSomething(req)
-				// 	return { something }
-				// },
 			}
 		});
 	await server.start();
@@ -152,7 +148,6 @@ async function startApolloServer() {
 }
 //////////////////////////////////////////////////////////////////////////////////////////// END SETUP OVERHEAD
 
-
 /////////////////////////////////////////// GET METHODS
 
 app.get('/payroll/getUserTimeStampsByDay',cors(), async (req, res) => {
@@ -160,11 +155,9 @@ app.get('/payroll/getUserTimeStampsByDay',cors(), async (req, res) => {
 	console.log("checking following fields" +filter)
 	await mongoSchema.find(filter, function(err, result){
 		if (!err) {
-			//console.log("your results: "+result);
 			res.json(result);
 		} else {
 			res.json("this key was not found");
-			//throw err;
 		}
 	}).clone().catch(function (err) {console.log(err)
 	})
@@ -227,32 +220,17 @@ app.get('/payroll/getUserTimeStampsByDay',cors(), async (req, res) => {
 		app.post('/payroll/clockIn',
 			cors(),
 			async (req, res) => {
-				//res.send("just send back nonsense clock in");
-				//console.log(req.body.key)
-				//return
 				const filter = {key: req.body.key}
 				await mongoSchema.exists(filter, async function (err, result) {
 					if (!err) {
-						if (result) { //if key does exist, then check for duplicate start time
-							const userFound = await mongoSchema.findOne({key: req.body.key});
-							if(userFound.onClockObjects.find(({ startTime }) => startTime === req.body.onClockObjects.startTime)){//blocks duplicate start times
-								res.send("you have already clocked in at this time: "+req.body.onClockObjects.startTime);
-								return
-							}else{
-								userFound.onClockObjects.push(req.body.onClockObjects);//if key exists, and there is not already a start time for this time
-								await userFound.save();
-								res.send("successfully updated existing entry: " + req.body.key);
-							}
-						} else { //if key does not yet exist, create key and populate with data from request as this is fist clockIN
-							const clockIn = await mongoSchema.create({
-								key: req.body.key,
-								email: req.body.email,
-								projectId: req.body.projectId,
-								date: req.body.date,
-								onClockObjects: req.body.onClockObjects
-							});
-							res.send("successfully added new entry: " + req.body.key + " to database");
-						}
+						const clockIn = await mongoSchema.create({
+							key: req.body.key,
+							email: req.body.email,
+							projectId: req.body.projectId,
+							date: req.body.date,
+							onClockObjects: req.body.onClockObjects
+						});
+						res.send("successfully added new entry to database");
 					} else {
 						throw err;
 					}
@@ -263,6 +241,7 @@ app.get('/payroll/getUserTimeStampsByDay',cors(), async (req, res) => {
 /////////////////////////////////////////// PUT METHODS
 		app.put('/payroll/updateByStartTime',cors(), async (req, res) => {
 			const filter = {key: req.body.key};
+			console.log(filter)
 			await mongoSchema.findOne(filter, async function (err, result) {
 				if (!err) {
 					//todo: need error checking for empty array={} findOne() result, shouldn't happen anyway though
@@ -280,7 +259,7 @@ app.get('/payroll/getUserTimeStampsByDay',cors(), async (req, res) => {
 					}
 					res.json("start time did not exist for this key, could not update");
 				} else {
-					throw err;
+					// throw err;
 				}
 			}).clone().catch(function (err) {console.log(err)
 			})
